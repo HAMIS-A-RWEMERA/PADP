@@ -14,51 +14,7 @@ import {
   Flame,
 } from 'lucide-react';
 import { usePlatform } from '../context/PlatformContext';
-
-const AFRICAN_MOTIONS_BANK = [
-  {
-    topic: 'African Continental Free Trade & Monetary Policy',
-    category: 'Economics',
-    motion: 'This House would establish a single African monetary union with a common floating currency.',
-    difficulty: 'Advanced',
-    context: 'AfCFTA macroeconomic integration and currency vulnerability',
-  },
-  {
-    topic: 'Critical Minerals & Value Addition',
-    category: 'Mining & Industry',
-    motion: 'This House would ban the export of all unrefined raw lithium, cobalt, and copper from African ports.',
-    difficulty: 'Intermediate',
-    context: 'Local processing industrialization mandates across DRC, Zimbabwe, Zambia',
-  },
-  {
-    topic: 'Decolonization of Higher Education',
-    category: 'Education & Society',
-    motion: 'This House believes that African universities should abolish tenure for professors who do not publish predominantly in local contexts.',
-    difficulty: 'Open',
-    context: 'Reforming academic incentives in post-colonial universities',
-  },
-  {
-    topic: 'Congo Basin Carbon Credits',
-    category: 'Climate & Ecology',
-    motion: 'This House would prohibit African states from selling sovereign carbon offset credits to multinational corporations.',
-    difficulty: 'Advanced',
-    context: 'Greenwashing versus sovereign revenue capture in equatorial forests',
-  },
-  {
-    topic: 'Regional Military Interventions',
-    category: 'Geopolitics & Security',
-    motion: 'This House, as ECOWAS, would prioritize non-military economic diplomacy over armed standby intervention in constitutional crises.',
-    difficulty: 'Intermediate',
-    context: 'Evaluating regional security protocols in West Africa',
-  },
-  {
-    topic: 'Judicial Appointments in Developing Democracies',
-    category: 'Constitutional Law',
-    motion: 'This House would replace presidential appointment of apex court judges with a randomly selected panel of senior appellate jurists.',
-    difficulty: 'Advanced',
-    context: 'Judicial independence and separation of powers',
-  },
-];
+import { MOTIONS } from '../data/motions';
 
 export const ResourcesView: React.FC = () => {
   const {
@@ -72,7 +28,8 @@ export const ResourcesView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeTab, setActiveTab] = useState<'guides' | 'motions'>('guides');
-  const [copiedMotionIndex, setCopiedMotionIndex] = useState<number | null>(null);
+  const [copiedMotionIndex, setCopiedMotionIndex] = useState<string | null>(null);
+  const [motionStatus, setMotionStatus] = useState<'active' | 'reserve'>('active');
 
   const filteredResources = useMemo(() => {
     return resources.filter((r) => {
@@ -85,9 +42,13 @@ export const ResourcesView: React.FC = () => {
     });
   }, [resources, searchQuery, selectedCategory]);
 
-  const handleCopyMotion = (motionText: string, index: number) => {
+  const filteredMotions = useMemo(() => {
+    return MOTIONS.filter(m => m.status === motionStatus);
+  }, [motionStatus]);
+
+  const handleCopyMotion = (motionText: string, id: string) => {
     navigator.clipboard.writeText(motionText);
-    setCopiedMotionIndex(index);
+    setCopiedMotionIndex(id);
     showToast('success', 'Motion Copied!', 'Debate motion copied to clipboard.');
     setTimeout(() => setCopiedMotionIndex(null), 2500);
   };
@@ -224,13 +185,17 @@ export const ResourcesView: React.FC = () => {
       {activeTab === 'motions' && (
         <div className="space-y-4">
           <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-300">
-            <strong>African Policy Motion Bank:</strong> These motions are calibrated for British Parliamentary (BP), World Schools (WSDC), and Asian Parliamentary (AP) rounds. Click to copy any motion for your society practice rounds.
+            <strong>African Policy Motion Bank:</strong> Calibrated motions for BP, WSDC, and AP. 
+            <div className='flex gap-2 mt-2'>
+              <button onClick={() => setMotionStatus('active')} className={`px-3 py-1 rounded-full ${motionStatus === 'active' ? 'bg-amber-500 text-white' : 'bg-white'}`}>Active (50)</button>
+              <button onClick={() => setMotionStatus('reserve')} className={`px-3 py-1 rounded-full ${motionStatus === 'reserve' ? 'bg-amber-500 text-white' : 'bg-white'}`}>Reserve</button>
+            </div>
           </div>
 
           <div className="space-y-3">
-            {AFRICAN_MOTIONS_BANK.map((item, idx) => (
+            {filteredMotions.map((item) => (
               <div
-                key={idx}
+                key={item.id}
                 className="p-5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm"
               >
                 <div className="space-y-1.5 flex-1">
@@ -238,20 +203,19 @@ export const ResourcesView: React.FC = () => {
                     <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-stone-800 px-2 py-0.5 rounded">
                       {item.category}
                     </span>
-                    <span className="text-[10px] text-stone-400">&bull; {item.difficulty}</span>
+                    {item.isAfricanContext && <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">African Context</span>}
                   </div>
                   <h4 className="text-sm font-bold text-stone-900 dark:text-stone-100 font-display leading-snug">
-                    &ldquo;{item.motion}&rdquo;
+                    &ldquo;{item.text}&rdquo;
                   </h4>
-                  <p className="text-xs text-stone-500 italic">{item.context}</p>
                 </div>
 
                 <button
-                  onClick={() => handleCopyMotion(item.motion, idx)}
+                  onClick={() => handleCopyMotion(item.text, item.id)}
                   className="px-3.5 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-amber-500 hover:text-stone-950 text-stone-700 dark:text-stone-300 font-bold text-xs transition-all flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
                 >
-                  {copiedMotionIndex === idx ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedMotionIndex === idx ? 'Copied' : 'Copy Motion'}</span>
+                  {copiedMotionIndex === item.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedMotionIndex === item.id ? 'Copied' : 'Copy Motion'}</span>
                 </button>
               </div>
             ))}

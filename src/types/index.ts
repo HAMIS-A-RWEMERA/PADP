@@ -261,3 +261,13 @@ export interface User {
   bookmarkedResources: string[];
   createdSubmissions: string[];
 }
+
+export interface Motion {
+  id: string;
+  text: string;
+  category: string;
+  isAfricanContext: boolean;
+  status: 'active' | 'reserve';
+  tags: string[];
+}
+
